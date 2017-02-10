@@ -10,7 +10,7 @@ import numpy as np
 import nibabel as nib
 import pyrpl.image_tools.vcalc as vcalc
 
-print '\n'.join(sys.path)
+print >> sys.stderr, '\n'.join(sys.path)
 
 path = sys.argv[1]
 wPath = sys.argv[2]
