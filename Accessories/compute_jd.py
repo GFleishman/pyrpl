@@ -12,15 +12,15 @@ import pyrpl.image_tools.vcalc as vcalc
 
 print >> sys.stderr, '\n'.join(sys.path)
 
-path = sys.argv[1]
-wPath = sys.argv[2]
-vox = np.array([1., 1., 1.])
-
-uf1 = np.empty((220, 220, 220, 3))
-for i in range(3):
-    p = path + str(i) + '.nii.gz'
-    uf1[..., i] = nib.load(p).get_data().squeeze()
-
-jd = np.linalg.det(vcalc.jacobian(uf1, vox))
-jd = nib.Nifti1Image(jd, np.eye(4))
-nib.save(jd, wPath)
+#path = sys.argv[1]
+#wPath = sys.argv[2]
+#vox = np.array([1., 1., 1.])
+#
+#uf1 = np.empty((220, 220, 220, 3))
+#for i in range(3):
+#    p = path + str(i) + '.nii.gz'
+#    uf1[..., i] = nib.load(p).get_data().squeeze()
+#
+#jd = np.linalg.det(vcalc.jacobian(uf1, vox))
+#jd = nib.Nifti1Image(jd, np.eye(4))
+#nib.save(jd, wPath)
