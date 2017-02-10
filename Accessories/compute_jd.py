@@ -8,7 +8,7 @@ Created on Wed Dec 16 13:00:38 2015
 import sys
 import numpy as np
 import nibabel as nib
-import pyrpl.image_tools.vcalc as vcalc
+import PyRPL.image_tools.vcalc as vcalc
 
 path = sys.argv[1]
 wPath = sys.argv[2]
