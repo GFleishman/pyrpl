@@ -38,6 +38,7 @@ class transformer:
             d = len(sh)
             X = np.empty(sh + (d,))
             sha = np.diag(sh) - np.identity(d) + 1
+            sha = sha.astype(np.int)
             oa = np.ones(sh)
             for i in range(d):
                 X[..., i] = np.reshape(np.arange(sh[i]), sha[i])*oa*vox[i]
