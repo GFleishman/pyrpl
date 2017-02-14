@@ -46,7 +46,7 @@ def optimize(J, T, params):
         # evaluate objective func, get gradient, take descent step
         obj_func = gr.evaluate()
         g = gr.get_gradient()
-        gr.take_step(- params['pStep'] * g[0])
+        gr.take_step(- params['pStep'] * g)  # [0])
 
         # store objective function values
         P0_mag.append(obj_func[0])
@@ -57,7 +57,7 @@ def optimize(J, T, params):
 
         # update stopping criteria
         stop = grad_mag[k]/grad_mag[0]
-        print stop
+        stop = 1.  # temp, eventually code grad mag comp into each model, return as g[1]
         k += 1
 
         # display feedback for testing
