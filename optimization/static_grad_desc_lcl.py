@@ -95,7 +95,6 @@ def display_feedback(P0_mag, data_match, k, gr):
     fig.add_subplot(4, gr.dc.N, 3*gr.dc.N + 1)
     for i in range(1, gr.dc.N):
         print type(data_match)
-        print data_match.shape
         print type(data_match[0])
         print type(i)
         print i
