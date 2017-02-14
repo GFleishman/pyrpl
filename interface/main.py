@@ -13,7 +13,7 @@ import nibabel as nib
 import numpy as np
 
 # optimizer import
-import PyRPL.optimization.static_grad_desc_lcl as optimizer
+import pyrpl.optimization.static_grad_desc_lcl as optimizer
 
 help_string = """
 

@@ -11,11 +11,11 @@ import numpy as np
 import numpy.linalg as la
 
 # fundamental image level imports
-import PyRPL.image_tools.vcalc as vcalc
-import PyRPL.image_tools.fvm as fvm
-import PyRPL.image_tools.transformer as transformer
-import PyRPL.image_tools.matcher as matcher
-import PyRPL.image_tools.regularizer_fftw as regularizer
+import pyrpl.image_tools.vcalc as vcalc
+import pyrpl.image_tools.fvm as fvm
+import pyrpl.image_tools.transformer as transformer
+import pyrpl.image_tools.matcher as matcher
+import pyrpl.image_tools.regularizer_fftw as regularizer
 
 
 class geodesic_regression_in_diffeomorphisms:

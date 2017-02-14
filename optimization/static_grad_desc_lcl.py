@@ -12,8 +12,8 @@ import numpy as np
 import numpy.linalg as la
 
 # fundamental image level imports
-import PyRPL.image_tools.vcalc as vcalc
-import PyRPL.models.elastic_registration as model
+import pyrpl.image_tools.vcalc as vcalc
+import pyrpl.models.geodesic_regression_in_diffeomorphisms as model
 
 # visualization imports
 import matplotlib.pyplot as plt
@@ -31,7 +31,7 @@ def optimize(J, T, params):
     stop = 1.
 
     # a geodesic_optimizer object, solves forward and backward systems
-    gr = model.elastic_registration(J, T, params)
+    gr = model.geodesic_regression_in_diffeomorphisms(J, T, params)
 
     k = 0   # count the total iterations
     j = 0   # count the resamples
