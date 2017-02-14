@@ -70,6 +70,7 @@ class differential(regularizer):
         # define some useful ingredients for later
         dim = len(sh)
         sha = np.diag(sh) + np.ones((dim, dim)) - np.identity(dim)
+        sha = sha.astype(np.int)
         oa = np.ones(sh)
 
         # if grad of div term is 0, kernel is a scalar, else a Lin Txm
@@ -83,7 +84,6 @@ class differential(regularizer):
             q = np.fft.fftfreq(sh[i], d=vox[i])
             X = 1 - np.cos(q*2.0*np.pi*vox[i])
             X *= 2*self.a/vox[i]**2
-            print type(sha[i][0])
             X = np.reshape(X, sha[i])*oa
             if b == 0.0:
                 self.L += X
