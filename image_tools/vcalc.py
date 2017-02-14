@@ -14,6 +14,7 @@ def partial(img, vox, axis, mode='wrap'):
     """Compute partial derivative of img w.r.t. axis direction"""
     d = len(img.shape)
     shm = np.identity(d)*2 + 1
+    shm = shm.astype(np.int)
     mask = np.array([1.0, 0.0, -1.0])
     m = np.reshape(mask, shm[axis])/(2.0*vox[axis])
     return ndif.convolve(img, m, mode=mode)
