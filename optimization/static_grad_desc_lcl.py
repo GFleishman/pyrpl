@@ -93,8 +93,9 @@ def display_feedback(P0_mag, data_match, k, gr):
     plt.axis('off')
     plt.colorbar()
     fig.add_subplot(4, gr.dc.N, 3*gr.dc.N + 1)
-    for i in range(1, gr.dc.N):
-        plt.plot(np.arange(k), data_match[i][:k])
+    for i in range(gr.dc.N):
+        dm = [x[1] for x in data_match]
+        plt.plot(np.arange(k), dm)
     fig.add_subplot(4, gr.dc.N, 3*gr.dc.N + 2)
     plt.plot(np.arange(k), P0_mag[:k])
 
