@@ -83,9 +83,7 @@ class differential(regularizer):
             q = np.fft.fftfreq(sh[i], d=vox[i])
             X = 1 - np.cos(q*2.0*np.pi*vox[i])
             X *= 2*self.a/vox[i]**2
-            print type(i)
-            print type(sha[i])
-            print "passed first index into sha"
+            print type(sha[i][0])
             X = np.reshape(X, sha[i])*oa
             if b == 0.0:
                 self.L += X
