@@ -57,6 +57,7 @@ def optimize(J, T, params):
 
         # update stopping criteria
         stop = grad_mag[k]/grad_mag[0]
+        print stop
         k += 1
 
         # display feedback for testing
