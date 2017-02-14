@@ -304,6 +304,7 @@ class data_container:
         d = len(res)
         X = np.empty(res + (d,))
         sha = np.diag(res) - np.identity(d) + 1
+        sha = sha.astype(np.int)
         oa = np.ones(res)
         for i in range(d):
             X[..., i] = np.reshape(np.arange(res[i]), sha[i]) * (
