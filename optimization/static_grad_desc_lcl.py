@@ -60,7 +60,7 @@ def optimize(J, T, params):
         k += 1
 
         # display feedback for testing
-        display_feedback_elastic(P0_mag, data_match, k, gr)
+        display_feedback(P0_mag, data_match, k, gr)
 
     return gr.dc, P0_mag, data_match, grad_mag
 
