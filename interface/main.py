@@ -109,15 +109,15 @@ def parseInputArgs():
         J[i] = J[i]*(1.0/np.mean(J[i][J[i] != 0]))
 
     # The Default parameter values (default for longitudinal)
-    # cross sectional defaults: pStep -> 0.1
+    # cross sectional defaults: pStep -> 0.001
     #                           its -> [100, 1]
     params = {
             'vox': np.array([1., 1., 1.]),
-            'pStep': 0.0001,
+            'pStep': 0.001,
             'iStep': 0.0,
             'rat': 5.0,
-            'its': [1000],
-            'res': [(220, 220, 220)],
+            'its': [1000, 1000],
+            'res': [(128, 128, 128), J[0].shape],
             'h': 8,
             'a': 1.0,
             'b': 0.0,
@@ -147,7 +147,7 @@ def parseInputArgs():
             elif axis is 2:
                 J2D[i] = J[i, :, :, slc]
         J = J2D
-        params['res'] = [(220, 220)]
+        params['res'] = [(128, 128), J[0].shape]
     if '-vox' in sys.argv:
         vox = []
         vox.append(float(sys.argv[sys.argv.index('-vox')+1]))
