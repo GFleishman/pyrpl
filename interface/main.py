@@ -116,8 +116,8 @@ def parseInputArgs():
             'pStep': 0.001,
             'iStep': 0.0,
             'rat': 5.0,
-            'its': [1000, 1000],
-            'res': [(128, 128, 128), J[0].shape],
+            'its': [1000],
+            'res': [J[0].shape],
             'h': 8,
             'a': 1.0,
             'b': 0.0,
@@ -147,7 +147,7 @@ def parseInputArgs():
             elif axis is 2:
                 J2D[i] = J[i, :, :, slc]
         J = J2D
-        params['res'] = [(128, 128), J[0].shape]
+        params['res'] = [J[0].shape]
     if '-vox' in sys.argv:
         vox = []
         vox.append(float(sys.argv[sys.argv.index('-vox')+1]))
