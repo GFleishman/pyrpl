@@ -13,7 +13,7 @@ import nibabel as nib
 import numpy as np
 
 # optimizer import
-import pyrpl.optimization.static_grad_desc_lcl as optimizer
+import pyrpl.optimization.static_grad_desc as optimizer
 
 help_string = """
 
@@ -113,17 +113,17 @@ def parseInputArgs():
     #                           its -> [100, 1]
     params = {
             'vox': np.array([1., 1., 1.]),
-            'pStep': 0.001,
+            'pStep': 0.01,
             'iStep': 0.0,
-            'rat': 5.0,
-            'its': [1000],
-            'res': [J[0].shape],
-            'h': 8,
+            'rat': 1e-6,
+            'its': [50, 15],
+            'res': [(128, 128, 128), J[0].shape],
+            'h': 6,
             'a': 1.0,
             'b': 0.0,
             'c': 0.1,
             'd': 2.0,
-            'mType': 'MI',
+            'mType': 'GCC',
             'rType': 'differential'
             }
 
@@ -147,7 +147,7 @@ def parseInputArgs():
             elif axis is 2:
                 J2D[i] = J[i, :, :, slc]
         J = J2D
-        params['res'] = [J[0].shape]
+        params['res'] = [(128, 128), J[0].shape]
     if '-vox' in sys.argv:
         vox = []
         vox.append(float(sys.argv[sys.argv.index('-vox')+1]))

@@ -8,7 +8,7 @@ Dependencies: NumPy, MatPlotLib, and pyrt.regTools
 """
 
 import numpy as np
-import PyRPL.models.geodesic_regression_in_diffeomorphisms as model
+import pyrpl.models.geodesic_regression_in_diffeomorphisms as model
 
 
 def optimize(J, T, params):

@@ -53,10 +53,10 @@ def optimize(J, T, params):
         data_match.append(obj_func[1:])
 
         # compute and store gradient magnitude
-        grad_mag.append(g[1])
+#        grad_mag.append(g[1])
 
         # update stopping criteria
-        stop = grad_mag[k]/grad_mag[0]
+#        stop = grad_mag[k]/grad_mag[0]
         stop = 1.  # temp, eventually code grad mag comp into each model, return as g[1]
         k += 1
 
