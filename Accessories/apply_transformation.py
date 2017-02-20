@@ -21,7 +21,7 @@ vox = np.array([1., 1., 1.])
 _t = transformer.transformer()
 
 # grab the data
-img = nib.load(img_root + '/jd.nii.gz').get_data().squeeze()
+img = nib.load(img_root).get_data().squeeze()
 
 # grab the transformation to mdt coordinates
 txm = np.empty(sh + (3,))
