@@ -8,7 +8,7 @@ Created on Thu Dec 17 11:11:59 2015
 import sys
 import numpy as np
 import nibabel as nib
-import transformer
+import pyrpl.image_tools.transformer as transformer
 
 # get file paths
 img_root = sys.argv[1]
