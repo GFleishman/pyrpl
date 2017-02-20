@@ -33,7 +33,7 @@ for i in range(3):
 txm += _t.position_array(sh, vox)
 
 # Apply txm to data
-img = _t.applyTransform(img, vox, txm)
+img = _t.apply_transform(img, vox, txm)
 
 # save results
 img = nib.Nifti1Image(img, np.eye(4))
