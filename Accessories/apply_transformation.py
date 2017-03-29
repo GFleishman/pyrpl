@@ -30,7 +30,7 @@ for i in range(3):
     txm[..., i] = nib.load(p).get_data().squeeze()
 
 # TEMP: these txms are old, need to have position array added
-txm += _t.position_array(sh, vox)
+#txm += _t.position_array(sh, vox)
 
 # Apply txm to data
 img = _t.apply_transform(img, vox, txm)

@@ -174,7 +174,7 @@ def histogram_match(ref, img, bins=2048):
     # Get transfer function and compute new image
     transfer_func = np.interp(imgcdf, refcdf, refe[:-1])
     out = np.interp(img, imge[:-1], transfer_func)
-    out[img == 0] = 0.0
+    out[img < 0] = 0.0
     return out
 
 
