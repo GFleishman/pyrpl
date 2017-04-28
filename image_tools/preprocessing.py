@@ -160,19 +160,15 @@ def histogram_match(ref, img, bins=2049):
     """Match the histogram of img to ref"""
 
     # Get reference histogram, and cdf
-    refhist, refe = np.histogram(ref, bins=bins)
-    refbg = refe[0]
-    refhist = refhist[1:]
-    refe = refe[1:]
+    refbg = ref.min()
+    refhist, refe = np.histogram(ref[ref > refbg], bins=bins)
     refhist = refhist.astype(np.float)
     refhist = refhist*(1.0/np.sum(refhist))
     refcdf = np.cumsum(refhist)
 
     # Get image histogram, and cdf
-    imghist, imge = np.histogram(img, bins=bins)
-    imgbg = imge[0]
-    imghist = imghist[1:]
-    imge = imge[1:]
+    imgbg = img.min()
+    imghist, imge = np.histogram(img[img > imgbg], bins=bins)
     imghist = imghist.astype(np.float)
     imghist = imghist*(1.0/np.sum(imghist))
     imgcdf = np.cumsum(imghist)
@@ -180,7 +176,8 @@ def histogram_match(ref, img, bins=2049):
     # Get transfer function and compute new image
     transfer_func = np.interp(imgcdf, refcdf, refe[:-1])
     out = np.interp(img, imge[:-1], transfer_func)
-    out[img <= imgbg] = refbg
+    out[img == imgbg] = refbg
+    out[out < refbg] = refbg
     return out
 
 
