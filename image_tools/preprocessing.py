@@ -15,39 +15,39 @@ def shave(img):
 
     Assumes background voxels are 0, i.e. for masked images"""
 
-    # compute on image copy
-    imgc = np.copy(img)
+    # spatial dimension of image
+    dimension = len(img.shape)
+    # place to store results
+    bounds = np.empty((dimension, 2))
 
     # for each spatial dimension
-    for i in range(len(imgc.shape)):
-
+    for i in range(dimension):
         # shave from the left
-        done = False
-        while not done:
-            splt = np.split(imgc, [1], axis=i)
-            sm = np.sum(splt[0])
-            if sm == 0.:
-                imgc = splt[1]
-            else:
-                done = True
-
+        j = -1
+        s = 0
+        while s == 0:
+            j += 1
+            slc = [slice(None, None, None),] * dimension
+            slc[i] = slice(j, j+1, None)
+            s = np.sum(img[slc])
+        bounds[i, 0] = j
         # shave from the right
-        done = False
-        while not done:
-            splt = np.split(imgc, [-1], axis=i)
-            sm = np.sum(splt[1])
-            if sm == 0.:
-                imgc = splt[0]
-            else:
-                done = True
-    return imgc
+        j = img.shape[i]
+        s = 0
+        while s == 0:
+            j -= 1
+            slc = [slice(None, None, None),] * dimension
+            slc[i] = slice(j, j+1, None)
+            s = np.sum(img[slc])
+        bounds[i, 1] = j
+        
+    return bounds
 
 
-def cube(img, vox, pad=0):
+def cube(img, vox):
     """Adjust dimensions such that field of view is a cube
 
-    Cube is with respect to the physical units, not number of voxels
-    pad indicates number of additional voxels to pad on"""
+    Cube is with respect to the physical units, not number of voxels"""
 
     # compute on image copy
     imgc = np.copy(img)
@@ -117,7 +117,7 @@ def obtain_foreground_mask(img):
     return ndi.morphology.binary_fill_holes(fg)
 
 
-def resolve_intensity_outliers(img):
+def compress_intensity_range(img):
     """Compress the intensity range to eliminate intensity outliers
 
     Outliers are defined as intensities below the 2nd or above the 98th
@@ -156,17 +156,23 @@ def resolve_intensity_outliers(img):
     return imgc
 
 
-def histogram_match(ref, img, bins=2048):
+def histogram_match(ref, img, bins=2049):
     """Match the histogram of img to ref"""
 
     # Get reference histogram, and cdf
-    refhist, refe = np.histogram(ref[ref > 0], bins=bins)
+    refhist, refe = np.histogram(ref, bins=bins)
+    refbg = refe[0]
+    refhist = refhist[1:]
+    refe = refe[1:]
     refhist = refhist.astype(np.float)
     refhist = refhist*(1.0/np.sum(refhist))
     refcdf = np.cumsum(refhist)
 
     # Get image histogram, and cdf
-    imghist, imge = np.histogram(img[img > 0], bins=bins)
+    imghist, imge = np.histogram(img, bins=bins)
+    imgbg = imge[0]
+    imghist = imghist[1:]
+    imge = imge[1:]
     imghist = imghist.astype(np.float)
     imghist = imghist*(1.0/np.sum(imghist))
     imgcdf = np.cumsum(imghist)
@@ -174,11 +180,11 @@ def histogram_match(ref, img, bins=2048):
     # Get transfer function and compute new image
     transfer_func = np.interp(imgcdf, refcdf, refe[:-1])
     out = np.interp(img, imge[:-1], transfer_func)
-    out[img < 0] = 0.0
+    out[img <= imgbg] = refbg
     return out
 
 
-def rescale_intensity(img, mn=0., mx=0., mean=0.):
+def scale_intensity(img, mn=0., mx=0., mean=0.):
     """rescale image intensities"""
 
     # compute on image copy
