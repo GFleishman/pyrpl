@@ -160,14 +160,14 @@ def histogram_match(ref, img, bins=2048):
     """Match the histogram of img to ref"""
 
     # Get reference histogram, and cdf
-    refbg = ref.min()
+    refbg = ref[[slice(0, 1, None),]*len(ref.shape)]
     refhist, refe = np.histogram(ref[ref > refbg], bins=bins)
     refhist = refhist.astype(np.float)
     refhist = refhist*(1.0/np.sum(refhist))
     refcdf = np.cumsum(refhist)
 
     # Get image histogram, and cdf
-    imgbg = img.min()
+    imgbg = img[[slice(0, 1, None),]*len(img.shape)]
     imghist, imge = np.histogram(img[img > imgbg], bins=bins)
     imghist = imghist.astype(np.float)
     imghist = imghist*(1.0/np.sum(imghist))
