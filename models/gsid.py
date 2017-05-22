@@ -219,6 +219,15 @@ class data_container:
 
         self.P = np.zeros((1,) + self.full_res)
         self.I = np.reshape(np.copy(J[0]), (1,) + self.full_res)
+        
+        # TODO: TEMP FOR DEBUGGING
+        print self.full_res
+        print self.curr_res
+        print self.full_vox
+        print self.curr_vox
+        print self.d
+        print self.cfl_nums
+        print self.t
 
     def resample(self, res, _t):
         """Change the resolution of the objects; ensure CFL is satisfied"""

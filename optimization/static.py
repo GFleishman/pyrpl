@@ -28,6 +28,9 @@ def optimize(J, T, params):
     k = 0   # count the total iterations
     j = 0   # count the resamples
     while k < ttl_its and stop > 0.0002:
+        
+        # TODO: TEMP FOR DEBUGGING
+        print 'iteration: ' | + str(k)
 
         # make sure CFL condition is satisfied
         gr.dc.satisfy_cfl()
