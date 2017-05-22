@@ -30,7 +30,7 @@ def optimize(J, T, params):
     while k < ttl_its and stop > 0.0002:
         
         # TODO: TEMP FOR DEBUGGING
-        print 'iteration: ' | + str(k)
+        print 'iteration: ' + str(k)
 
         # make sure CFL condition is satisfied
         gr.dc.satisfy_cfl()
