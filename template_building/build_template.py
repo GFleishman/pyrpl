@@ -71,7 +71,7 @@ def main():
             avgP0 += np.load(mPaths[i])
         avgP0 *= 1.0/N
         # increment total momentum
-        P0_full += avgP0
+        P0_full = P0_full + avgP0
 
         # average the images
         avgI0 = 0
