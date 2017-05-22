@@ -83,4 +83,10 @@ def main():
         wPath = write_path_root + '/' + ref_str + '_I0.npy'
         np.save(wPath, I0)
 
+# TODO: TEMP FOR DEBUGGING!
+def trace(frame, event, arg):
+    print "%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno)
+    return trace
+sys.settrace(trace)
+
 main()
