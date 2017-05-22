@@ -62,7 +62,7 @@ def main():
                 time.sleep(5)
                 tFound = True
                 tmp = nib.load(tPath).get_data().squeeze()
-                tmp = preproc.rescale_intensity(tmp, mean=1.0)
+#                tmp = preproc.rescale_intensity(tmp, mean=1.0)
             else:
                 time.sleep(2)
 
