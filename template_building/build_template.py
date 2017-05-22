@@ -106,7 +106,8 @@ def main():
         params['h'] = 6
         J = np.array([avgI0, avgI0])
         tm = np.array([0.0, 1.0])
-        gr = model.geodesic_regression_in_diffeomorphisms(J, tm, params)
+        # TODO: consider creating this only once outside outer_its loop
+        gr = model.gsid(J, tm, params)
         gr.resample(params['res'][-1])
         gr.dc.P[0] = avgP0
 
