@@ -79,6 +79,8 @@ def main():
         I0 = _t.apply_transform(ref, grdc.full_vox, grdc.uf[-1])
         wPath = write_path_root + '/' + ref_str + '_I0.npy'
         np.save(wPath, I0)
+        
+        sys.exit()
 
 # TODO: TEMP FOR DEBUGGING!
 #def trace(frame, event, arg):
