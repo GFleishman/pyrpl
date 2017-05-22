@@ -93,7 +93,7 @@ def main():
 
         # ensure CFL condition is satisfied
         dI = vcalc.gradient(T, params['vox'])
-        v = - gr._r.regularize(dI * P0_full)
+        v = - gr._r.regularize(dI * P0_full[..., np.newaxis])
         gr.dc.cfl_nums[0] = abs(v * gr.dc.T[-1]/params['vox']).max()
         gr.dc.satisfy_cfl()
 
