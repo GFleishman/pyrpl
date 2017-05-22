@@ -24,7 +24,7 @@ def main():
 
     # get the reference image, make an id string for it
     ref = nib.load(reference_path).get_data().squeeze()
-    ref = preproc.rescale_intensity(ref, mean=1.0)
+    #ref = preproc.rescale_intensity(ref, mean=1.0)
     # currently assumes filenames are unique between inputs
     # consider generating a unique hash here, common suffix between references
     ref_str = reference_path.split('/')[-1].split('.')[0]
