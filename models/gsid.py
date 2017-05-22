@@ -73,11 +73,7 @@ class gsid:
         dc.cfl_nums[0] = abs(dc.v * dc.T[-1]/dc.curr_vox).max()
 
         i = 1
-        while i < dc.params['h']:
-            
-            # TODO: TEMP FOR DEBUGGING
-            print dc.params
-            
+        while i < dc.params['h']:            
             # Forward Euler
             dc.uf[i] = (dc.uf[i-1] + (dc.t[i] - dc.t[i-1]) *
                         self._t.apply_transform(
@@ -223,16 +219,6 @@ class data_container:
 
         self.P = np.zeros((1,) + self.full_res)
         self.I = np.reshape(np.copy(J[0]), (1,) + self.full_res)
-        
-        # TODO: TEMP FOR DEBUGGING
-        print self.full_res
-        print self.curr_res
-        print self.full_vox
-        print self.curr_vox
-        print self.d
-        print self.cfl_nums
-        print self.t
-        print params
 
     def resample(self, res, _t):
         """Change the resolution of the objects; ensure CFL is satisfied"""

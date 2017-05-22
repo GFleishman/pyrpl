@@ -36,7 +36,7 @@ def main():
     params = {
             'vox': np.array([1.0, 1.0, 1.0]),
             'oIts': outer_iterations,
-            'pStep': 0.025,
+            'pStep': 1e-8,
             'iStep': 0.0,
             'tStep': 1.0,
             'rat': 0.01,
@@ -79,8 +79,6 @@ def main():
         I0 = _t.apply_transform(ref, grdc.full_vox, grdc.uf[-1])
         wPath = write_path_root + '/' + ref_str + '_I0.npy'
         np.save(wPath, I0)
-        
-        sys.exit()
 
 # TODO: TEMP FOR DEBUGGING!
 #def trace(frame, event, arg):
