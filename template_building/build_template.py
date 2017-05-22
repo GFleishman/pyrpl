@@ -11,23 +11,22 @@ import time
 import glob
 import numpy as np
 import nibabel as nib
-import PyRPL.models.geodesic_regression_in_diffeomorphisms as model
-import PyRPL.image_tools.vcalc as vcalc
-import PyRPL.image_tools.preprocessing as pp
+
+import pyrpl.models.gsid as model
+import pyrpl.image_tools.vcalc as vcalc
 
 
 def main():
 
     # grab the input parameters
-    initial_template_path = sys.argv[2]
-    write_path_root = sys.argv[1]
+    initial_template_path = sys.argv[1]
+    write_path_root = sys.argv[2]
     outer_iterations = int(sys.argv[3])
     N = int(sys.argv[4])
 
     # get the current template image, write it out
     T = nib.load(initial_template_path).get_data().squeeze()
-    T = pp.rescale_intensity(T, mean=1.0)
-    Tout = nib.Nifti1Image(T, np.ye(4))
+    Tout = nib.Nifti1Image(T, np.eye(4))
     nib.save(Tout, write_path_root + '/template0.nii.gz')
 
     # a place to store the full momentum for the warp of the initial template
@@ -41,14 +40,14 @@ def main():
             'iStep': 0.0,
             'tStep': 1.0,
             'rat': 0.01,
-            'its': [100, 1],
-            'res': [(128, 128, 128), T.shape],
-            'h': 4,
+            'its': [75],
+            'res': [T.shape],
+            'h': 6,
             'a': 1.0,
             'b': 0.0,
             'c': 0.1,
             'd': 2.0,
-            'mType': 'CCL',
+            'mType': 'SSD',
             'rType': 'differential'
             }
 
@@ -87,7 +86,8 @@ def main():
         # geodesic shoot the sharp template with cumulative average momentum
         J = np.array([T, T])
         tm = np.array([0.0, 1.0])
-        gr = model.geodesic_regression_in_diffeomorphisms(J, tm, params)
+        # TODO: consider creating this only once outside outer_its loop
+        gr = model.gsid(J, tm, params)
         gr.resample(params['res'][-1])
         gr.dc.P[0] = P0_full
 

@@ -9,9 +9,10 @@ import sys
 import time
 import numpy as np
 import nibabel as nib
-import PyRPL.optimization.static_grad_desc_lcl as optimizer
-import PyRPL.image_tools.preprocessing as pp
-import PyRPL.image_tools.transformer as transformer
+
+import pyrpl.optimization.static as optimizer
+import pyrpl.image_tools.preprocessing as preproc
+import pyrpl.image_tools.transformer as transformer
 
 
 def main():
@@ -23,7 +24,8 @@ def main():
 
     # get the reference image, make an id string for it
     ref = nib.load(reference_path).get_data().squeeze()
-    ref = pp.rescale_intensity(ref, mean=1.0)
+    ref = preproc.rescale_intensity(ref, mean=1.0)
+    # currently assumes filenames are unique between inputs
     # consider generating a unique hash here, common suffix between references
     ref_str = reference_path.split('/')[-1].split('.')[0]
 
@@ -38,14 +40,14 @@ def main():
             'iStep': 0.0,
             'tStep': 1.0,
             'rat': 0.01,
-            'its': [99, 1],
-            'res': [(128, 128, 128), ref.shape],
-            'h': 4,
+            'its': [75],
+            'res': [ref.shape],
+            'h': 6,
             'a': 1.0,
             'b': 0.0,
             'c': 0.1,
             'd': 2.0,
-            'mType': 'CCL',
+            'mType': 'SSD',
             'rType': 'differential'
             }
 
@@ -60,7 +62,7 @@ def main():
                 time.sleep(5)
                 tFound = True
                 tmp = nib.load(tPath).get_data().squeeze()
-                tmp = pp.rescale_intensity(tmp, mean=1.0)
+                tmp = preproc.rescale_intensity(tmp, mean=1.0)
             else:
                 time.sleep(2)
 
