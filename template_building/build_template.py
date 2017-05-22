@@ -40,7 +40,7 @@ def main():
             'iStep': 0.0,
             'tStep': 1.0,
             'rat': 0.01,
-            'its': [75],
+            'its': [5],
             'res': [T.shape],
             'h': 6,
             'a': 1.0,
@@ -103,7 +103,7 @@ def main():
         nib.save(Tout, write_path_root + '/template' + str(o+1) + '.nii.gz')
 
         # geodesic shoot the averaged template with the average momentum
-        params['h'] = 4
+        params['h'] = 6
         J = np.array([avgI0, avgI0])
         tm = np.array([0.0, 1.0])
         gr = model.geodesic_regression_in_diffeomorphisms(J, tm, params)

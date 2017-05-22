@@ -40,7 +40,7 @@ def main():
             'iStep': 0.0,
             'tStep': 1.0,
             'rat': 0.01,
-            'its': [75],
+            'its': [5],
             'res': [ref.shape],
             'h': 6,
             'a': 1.0,
@@ -72,6 +72,9 @@ def main():
 
         # Fit geodesic
         grdc, P0_mag, data_match, grad_mag = optimizer.optimize(J, T, params)
+        print P0_mag
+        print data_match
+        print grad_mag
 
         # write out the momentum and transformations
         wPath = write_path_root + '/' + ref_str + '_momentum.npy'
