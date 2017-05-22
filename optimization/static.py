@@ -54,7 +54,7 @@ def optimize(J, T, params):
         # update stopping criteria
         stop = grad_mag[k]/grad_mag[0]
         print k
-        print '\t' + str(obj_func)
+        print '\t' + str(data_match[:, k])
         print '\t' + str(P0_mag[k])
         print '\t' + str(grad_mag[k])
         k += 1
