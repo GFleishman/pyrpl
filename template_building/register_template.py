@@ -103,6 +103,6 @@ def main():
 #            status.close()
 #    print result
 #    return trace
-sys.settrace(trace)
+#sys.settrace(trace)
 
 main()
