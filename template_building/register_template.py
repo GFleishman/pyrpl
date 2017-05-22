@@ -84,8 +84,8 @@ def main():
         np.save(wPath, I0)
 
 # TODO: TEMP FOR DEBUGGING!
-#def trace(frame, event, arg):
-#    print "%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno)
+def trace(frame, event, arg):
+    print "%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno)
 #    """Memory usage of the current process in kilobytes."""
 #    status = None
 #    result = {'peak': 0, 'rss': 0}
@@ -102,7 +102,7 @@ def main():
 #        if status is not None:
 #            status.close()
 #    print result
-#    return trace
-#sys.settrace(trace)
+    return trace
+sys.settrace(trace)
 
 main()
