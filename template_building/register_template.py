@@ -72,9 +72,6 @@ def main():
 
         # Fit geodesic
         grdc, P0_mag, data_match, grad_mag = optimizer.optimize(J, T, params)
-        print P0_mag
-        print data_match
-        print grad_mag
 
         # write out the momentum and transformations
         wPath = write_path_root + '/' + ref_str + '_momentum.npy'
