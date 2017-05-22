@@ -59,15 +59,6 @@ class gsid:
         dc = self.dc
         # check cfl condition
         dc.satisfy_cfl()
-        
-        # TODO: TEMP FOR DEBUGGING
-        print dc.full_res
-        print dc.curr_res
-        print dc.full_vox
-        print dc.curr_vox
-        print dc.d
-        print dc.cfl_nums
-        print dc.t
 
         # compute initial velocity from initial momentum
         dI = vcalc.gradient(dc.I[0], dc.curr_vox)
@@ -228,15 +219,6 @@ class data_container:
 
         self.P = np.zeros((1,) + self.full_res)
         self.I = np.reshape(np.copy(J[0]), (1,) + self.full_res)
-        
-        # TODO: TEMP FOR DEBUGGING
-        print self.full_res
-        print self.curr_res
-        print self.full_vox
-        print self.curr_vox
-        print self.d
-        print self.cfl_nums
-        print self.t
 
     def resample(self, res, _t):
         """Change the resolution of the objects; ensure CFL is satisfied"""

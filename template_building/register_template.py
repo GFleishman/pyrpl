@@ -71,21 +71,18 @@ def main():
         T = np.array([0.0, 1.0])
 
         # Fit geodesic
-
-        # TODO: TEMP FOR DEBUGGING
-        print 'before initializing optimizer'
         grdc, P0_mag, data_match, grad_mag = optimizer.optimize(J, T, params)
 
         # write out the momentum and transformations
         wPath = write_path_root + '/' + ref_str + '_momentum.npy'
         np.save(wPath, grdc.P[0])
-        I0 = _t.applyTransform(ref, grdc.full_vox, grdc.uf[-1])
+        I0 = _t.apply_transform(ref, grdc.full_vox, grdc.uf[-1])
         wPath = write_path_root + '/' + ref_str + '_I0.npy'
         np.save(wPath, I0)
 
 # TODO: TEMP FOR DEBUGGING!
-def trace(frame, event, arg):
-    print "%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno)
+#def trace(frame, event, arg):
+#    print "%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno)
 #    """Memory usage of the current process in kilobytes."""
 #    status = None
 #    result = {'peak': 0, 'rss': 0}
@@ -102,7 +99,7 @@ def trace(frame, event, arg):
 #        if status is not None:
 #            status.close()
 #    print result
-    return trace
-sys.settrace(trace)
+#    return trace
+#sys.settrace(trace)
 
 main()

@@ -23,9 +23,6 @@ def optimize(J, T, params):
     stop = 1.
 
     # a geodesic_optimizer object, solves forward and backward systems
-
-    # TODO: TEMP FOR DEBUGGING
-    print 'before initializing gsid model'
     gr = model.gsid(J, T, params)
 
     k = 0   # count the total iterations
@@ -57,11 +54,6 @@ def optimize(J, T, params):
         # update stopping criteria
         stop = grad_mag[k]/grad_mag[0]
 
-        # TODO: TEMP FOR DEBUGGING
-        print k
-        print '\t' + str(data_match[:, k])
-        print '\t' + str(P0_mag[k])
-        print '\t' + str(grad_mag[k])
         k += 1
 
     return gr.dc, P0_mag, data_match, grad_mag
