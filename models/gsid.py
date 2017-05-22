@@ -74,6 +74,10 @@ class gsid:
 
         i = 1
         while i < dc.params['h']:
+            
+            # TODO: TEMP FOR DEBUGGING
+            print dc.params
+            
             # Forward Euler
             dc.uf[i] = (dc.uf[i-1] + (dc.t[i] - dc.t[i-1]) *
                         self._t.apply_transform(
@@ -228,6 +232,7 @@ class data_container:
         print self.d
         print self.cfl_nums
         print self.t
+        print params
 
     def resample(self, res, _t):
         """Change the resolution of the objects; ensure CFL is satisfied"""
