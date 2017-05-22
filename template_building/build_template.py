@@ -36,7 +36,7 @@ def main():
     params = {
             'vox': np.array([1.0, 1.0, 1.0]),
             'oIts': outer_iterations,
-            'pStep': 0.025,
+            'pStep': 1e-8,
             'iStep': 0.0,
             'tStep': 1.0,
             'rat': 0.01,
