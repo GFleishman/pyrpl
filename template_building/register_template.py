@@ -71,6 +71,9 @@ def main():
         T = np.array([0.0, 1.0])
 
         # Fit geodesic
+
+        # TODO: TEMP FOR DEBUGGING
+        print 'before initializing optimizer'
         grdc, P0_mag, data_match, grad_mag = optimizer.optimize(J, T, params)
 
         # write out the momentum and transformations
