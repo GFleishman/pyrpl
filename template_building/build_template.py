@@ -36,16 +36,16 @@ def main():
     params = {
             'vox': np.array([1.0, 1.0, 1.0]),
             'oIts': outer_iterations,
-            'pStep': 1e-8,
+            'pStep': 1e-5,
             'iStep': 0.0,
             'tStep': 1.0,
-            'rat': 0.01,
-            'its': [5],
+            'rat': 1.0,
+            'its': [100],
             'res': [T.shape],
-            'h': 6,
+            'h': 8,
             'a': 1.0,
             'b': 0.0,
-            'c': 0.1,
+            'c': 0.05,
             'd': 2.0,
             'mType': 'SSD',
             'rType': 'differential'
@@ -80,8 +80,8 @@ def main():
         avgI0 *= 1.0/N
 
         # clear the momenta and images files
-        map(os.remove, mPaths)
-        map(os.remove, iPaths)
+#        map(os.remove, mPaths)
+#        map(os.remove, iPaths)
 
         # geodesic shoot the sharp template with cumulative average momentum
         J = np.array([T, T])

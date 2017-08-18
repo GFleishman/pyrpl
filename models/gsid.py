@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-The geodesic regression in diffeomorphisms model. Symmetric interleaved
-geodesic shooting is available.
+The geodesic shooting in diffeomorphisms model.
 
 Author: Greg M. Fleishman
 """
 
 import numpy as np
 import numpy.linalg as la
-
 import pyrpl.image_tools.vcalc as vcalc
 import pyrpl.image_tools.fvm as fvm
 import pyrpl.image_tools.transformer as transformer
@@ -39,20 +37,33 @@ class gsid:
     def evaluate(self):
         """Evaluate the objective functional"""
 
-        return self.solveForward()
+        return self.solve_forward()
 
     def get_gradient(self):
         """Obtain the gradient w.r.t. the transformation parameters"""
 
-        return self.solveBackward()
+        return self.solve_backward()
 
     def take_step(self, update):
         """Take an optimization step"""
 
         self.dc.P[0] += update
 
+    def resample(self, res):
+        """Resample all objects for multi-resolution schemes"""
 
-    def solveForward(self):
+        dc = self.dc
+        if dc.params['iStep'] == 0.0:
+                dc.Ifr[0] = np.copy(dc.J[0])
+        dc.resample(res, self._t)
+        self._r = regularizer.regularizer(dc.params['rType'],
+                                          dc.params['a'],
+                                          dc.params['b'],
+                                          dc.params['c'],
+                                          dc.params['d'],
+                                          dc.curr_vox, res)
+
+    def solve_forward(self):
         """Shoot the geodesic forward given initial conditions"""
 
         # cut down on all the self calls
@@ -69,7 +80,7 @@ class gsid:
         P0_mag = - np.prod(dc.curr_vox) * np.sum(m * dc.v)
         P0_mag *= dc.params['rat']
 
-        # Initial min number of time steps due to CFL
+        # Initial min number of time steps due to CFL condition
         dc.cfl_nums[0] = abs(dc.v * dc.T[-1]/dc.curr_vox).max()
 
         i = 1
@@ -106,13 +117,13 @@ class gsid:
             i += 1
 
         # Compute full resolution version of final image
-        dc.txm = self._t.resample(dc.ub[-1],
-                                  dc.curr_vox,
-                                  dc.full_res,
-                                  vec=True)
+        txm = self._t.resample(dc.ub[-1],
+                               dc.curr_vox,
+                               dc.full_res,
+                               vec=True)
         dc.Ifr[1] = self._t.apply_transform(dc.Ifr[0],
                                             dc.full_vox,
-                                            dc.txm)
+                                            txm)
 
         # compute image matching functionals at both ends
         obj_func = []
@@ -122,7 +133,7 @@ class gsid:
         # return complete evaluation of objective function
         return [P0_mag] + obj_func
 
-    def solveBackward(self):
+    def solve_backward(self):
         """Solve the adjoint system backward to get gradient"""
 
         # cut down on all the self calls
@@ -182,100 +193,105 @@ class gsid:
         A = dc.params['rat'] * np.einsum('...i,...i', dI, A)
         return A - dc.Pa
 
-    def resample(self, res):
-        """Resample all objects for multi-resolution schemes"""
-
-        dc = self.dc
-        if dc.params['iStep'] == 0.0:
-                dc.Ifr[0] = np.copy(dc.J[0])
-        dc.resample(res, self._t)
-        self._r = regularizer.regularizer(dc.params['rType'],
-                                          dc.params['a'],
-                                          dc.params['b'],
-                                          dc.params['c'],
-                                          dc.params['d'],
-                                          dc.curr_vox, res)
-
 
 class data_container:
     """A container to wrap all data objects for geodesic regression"""
 
     def __init__(self, J, T, params):
-        self.J = J
-        self.T = T
-        self.params = params
+        
+        # just to cut down on ugly text
+        s = self
 
-        self.full_res = J[0].shape
-        self.curr_res = J[0].shape
-        self.full_vox = params['vox']
-        self.curr_vox = params['vox']
-        self.d = len(self.full_res)
-        self.cfl_nums = np.zeros(params['h'])
-        self.t = self.compute_t(self.T, self.params['h'])
+        # store references to the inputs
+        s.J = J
+        s.T = T
+        s.params = params
 
-        self.Ifr = np.empty_like(J)
-        self.Ifr[0] = np.copy(J[0])
-        self.txm = np.empty(self.full_res + (self.d,))
+        # store references to the current and full resolution
+        s.full_res = J[0].shape
+        s.curr_res = J[0].shape
+        s.full_vox = params['vox']
+        s.curr_vox = params['vox']
+        # store reference to the dimension
+        s.d = len(s.full_res)
 
-        self.P = np.zeros((1,) + self.full_res)
-        self.I = np.reshape(np.copy(J[0]), (1,) + self.full_res)
+        # allocate array to store cfl number for each time step
+        s.cfl_nums = np.zeros(params['h'])
+        # compute the time step values
+        s.t = s.compute_times(T, params['h'])
+
+        # allocate array for full resolution endpoints of image path
+        s.Ifr = np.empty_like(J)
+        np.copyto(s.Ifr[0], J[0])
+
+        # allocate arrays to store momenta and image paths
+        s.P = np.zeros((1,) + s.full_res)
+        s.I = np.empty((1,) + s.full_res)
+        np.copyto(s.I[0], J[0])
 
     def resample(self, res, _t):
         """Change the resolution of the objects; ensure CFL is satisfied"""
 
-        res_fact = max([float(res[i])/self.curr_res[i] for i in range(self.d)])
-        self.cfl_nums *= res_fact
-        ts = np.ceil(self.cfl_nums[:-1].max()) + 1
-        if self.params['h'] <= ts:
-            self.params['h'] = int(ts + 2)
-            diff = self.params['h'] - len(self.cfl_nums)
-            self.cfl_nums = np.pad(self.cfl_nums, (0, diff), mode='constant')
-            self.t = self.compute_t(self.T, self.params['h'])
+        # just to cut down on ugly text
+        s = self
 
-        P0 = self.P[0]
-        self.P = np.empty((self.params['h'],) + res)
-        self.P[0] = _t.resample(P0, self.curr_vox, res)
-        self.I = np.empty_like(self.P)
-        self.I[0] = _t.resample(self.Ifr[0], self.full_vox, res)
+        # update cfl numbers to accomodate resolution change
+        res_fact = max([float(res[i])/s.curr_res[i] for i in range(s.d)])
+        s.cfl_nums *= res_fact
+        s.check_cfl()
 
-        self.curr_res = res
-        self.curr_vox = _t.new_vox_size(self.full_res,
-                                        res,
-                                        self.full_vox)
+        # reallocate momenta and image paths at new res
+        P0 = s.P[0]
+        s.P = np.empty((s.params['h'],) + res)
+        s.P[0] = _t.resample(P0, s.curr_vox, res)
+        s.I = np.empty_like(s.P)
+        s.I[0] = _t.resample(s.Ifr[0], s.full_vox, res)
 
-        d = len(res)
-        X = np.empty(res + (d,))
-        sha = np.diag(res) - np.identity(d) + 1
-        sha = sha.astype(np.int)
-        oa = np.ones(res)
-        for i in range(d):
-            X[..., i] = np.reshape(np.arange(res[i]), sha[i]) * (
-                                            oa * self.curr_vox[i])
+        # update resolution and voxel references
+        s.curr_res = res
+        s.curr_vox = _t.new_vox_size(s.full_res, res, s.full_vox)
 
-        self.uf = np.empty(self.P.shape + (self.d,))
-        self.uf[0] = np.copy(X)
-        self.ub = np.empty_like(self.uf)
-        self.ub[0] = np.copy(X)
+        # reallocate forward and backward position arrays at new res
+        X = _t.position_array(res, s.curr_vox)
+        s.uf = np.empty(s.P.shape + (s.d,))
+        np.copyto(s.uf[0], X)
+        s.ub = np.empty_like(s.uf)
+        np.copyto(s.ub[0], X)
+
+    def check_cfl(self):
+        """get max time steps by cfl adjust cfl and time arrays accordingly"""
+
+        # just to cut down on ugly text
+        s = self
+
+        ts = np.ceil(s.cfl_nums[:-1].max()) + 1
+        if s.params['h'] <= ts:
+            s.params['h'] = int(ts + 2)
+            diff = s.params['h'] - len(s.cfl_nums)
+            s.cfl_nums = np.pad(s.cfl_nums, (0, diff), mode='constant')
+            s.t = s.compute_times(s.T, s.params['h'])
+            return diff
+        else:
+            return False
 
     def satisfy_cfl(self):
         """Ensure there are sufficient time steps to satisfy CFL condition"""
 
-        ts = np.ceil(self.cfl_nums[:-1].max()) + 1
-        if self.params['h'] <= ts:
-            self.params['h'] = int(ts + 2)
-            diff = self.params['h'] - len(self.cfl_nums)
-            self.cfl_nums = np.pad(self.cfl_nums, (0, diff), mode='constant')
-            self.t = self.compute_t(self.T, self.params['h'])
+        # just to cut down on ugly text
+        s = self
 
-            pad_array = [(0, diff)] + [(0, 0)]*self.d
-            self.P = np.pad(self.P, pad_array, mode='constant')
-            self.I = np.pad(self.I, pad_array, mode='constant')
+        # if cfl needs to be updated
+        diff = s.check_cfl()
+        if diff:
+            pad_array = [(0, diff)] + [(0, 0)]*s.d
+            s.P = np.pad(s.P, pad_array, mode='constant')
+            s.I = np.pad(s.I, pad_array, mode='constant')
 
             pad_array += [(0, 0)]
-            self.uf = np.pad(self.uf, pad_array, mode='constant')
-            self.ub = np.pad(self.ub, pad_array, mode='constant')
+            s.uf = np.pad(s.uf, pad_array, mode='constant')
+            s.ub = np.pad(s.ub, pad_array, mode='constant')
 
-    def compute_t(self, T, h):
+    def compute_times(self, T, h):
         """Compute time points along discrete sampling of geodesic"""
 
         t = (T[-1] - T[0])/(h - 1.) * np.arange(h) + T[0]

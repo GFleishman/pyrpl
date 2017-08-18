@@ -12,6 +12,7 @@ import scipy.ndimage.filters as ndif
 
 def partial(img, vox, axis, mode='wrap'):
     """Compute partial derivative of img w.r.t. axis direction"""
+
     d = len(img.shape)
     shm = np.identity(d)*2 + 1
     shm = shm.astype(np.int)
