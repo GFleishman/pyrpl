@@ -16,15 +16,15 @@ import vcalc
 class matcher:
     """A template class for image matching functionals"""
 
-    def __init__(self, tp):
+    def __init__(self, tp, n):
         if tp == 'SSD' or tp == 'ssd':
             self._m = SSD()
         elif tp == 'GCC' or tp == 'gcc':
             self._m = GCC()
         elif tp == 'LCC' or tp == 'lcc':
-            self._m = LCC()
+            self._m = LCC(n)
         elif tp == 'MI' or tp == 'mi':
-            self._m = MI()
+            self._m = MI(n)
         else:
             print 'matcher type must be SSD, GCC, LCC, or MI'
 
@@ -86,7 +86,8 @@ class GCC(matcher):
         v1 = np.var(mtmp)
         u2 = np.mean(mref)
         v2 = np.var(mref)
-        return np.mean((mtmp-u1)*(mref-u2))**2/(v1*v2)
+        v12 = np.mean((mtmp-u1)*(mref-u2))
+        return v12**2/(v1*v2)
 
     def residual(self, ref, tmp):
         """Compute the gradient of GCC w.r.t. the template image"""
@@ -109,17 +110,16 @@ class GCC(matcher):
 class LCC(matcher):
     """Local Correlation Coefficient matcher"""
 
-    n = 11      # User should have control over this, must be an odd integer
-
-    def __init__(self):
+    def __init__(self, n):
         """initialization of an LCC matcher requires no inputs"""
 
+        self.n = n
         return
 
     def dist(self, ref, tmp):
         """compute the local correlation coefficient between two images"""
 
-        u1, v1, u2, v2, v12 = self.getMovingStats(ref, tmp)
+        u1, v1, u2, v2, v12 = self.get_moving_stats(ref, tmp)
         cc = v12**2/(v1*v2)
         # ignore background voxels and where CCL is undefined
         fill = np.isnan(cc) + np.isinf(cc) + ((tmp == 0) * (ref == 0))
@@ -129,17 +129,14 @@ class LCC(matcher):
     def residual(self, ref, tmp):
         """compute the gradient of LCC w.r.t. the template image"""
 
-        u1, v1, u2, v2, v12 = self.getMovingStats(ref, tmp)
+        u1, v1, u2, v2, v12 = self.get_moving_stats(ref, tmp)
         res = 2*v12*((ref-u2)*v1 - (tmp-u1)*v12)/(v2*v1**2)
         # background voxels don't need residual
-        fill = ((tmp == 0) * (ref == 0))
+        fill = np.isnan(res) + np.isinf(res) + ((tmp == 0) * (ref == 0))
         res[fill] = 0
-        # where CCL is undefined, use SSD as a backup
-        fill = np.isnan(res) + np.isinf(res)
-        res[fill] = (ref - tmp)[fill]
         return res
 
-    def getMovingStats(self, ref, tmp):
+    def get_moving_stats(self, ref, tmp):
         """compute local mean, var, and covar of reference and tmp images"""
 
         # Pad arrays with zeros

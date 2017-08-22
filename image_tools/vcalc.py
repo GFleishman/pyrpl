@@ -45,7 +45,9 @@ def jacobian(img, vox, txm=True):
     jac = np.empty(sh[:-1] + (m, d))
 
     for i in range(m):
-        jac[..., i, :] = gradient(img[..., i], vox)
+        for j in range(d):
+            jac[..., i, j] = partial(img[..., i], vox, axis=j)
+    # transformations are fixed on the boundary
     if txm:
         beg = slice(0, 1, None)
         end = slice(-1, None, None)

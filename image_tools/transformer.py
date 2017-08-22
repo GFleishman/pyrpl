@@ -45,7 +45,7 @@ class transformer:
             self.X = X
         return np.copy(self.X)
 
-    def resample(self, img, vox, res, vec=False):
+    def resample(self, img, vox, res, vec=False, o=1):
         """Resample img to resolution res, compute new voxel size"""
 
         if not vec:
@@ -56,23 +56,22 @@ class transformer:
         else:
             nvox = self.new_vox_size(img.shape[:-1], res, vox)
             X = self.position_array(res, nvox)/vox
-
             ret = np.empty(res + (img.shape[-1],))
             for i in range(img.shape[-1]):
-                ret[..., i] = self.interpolate(img[..., i], X)
+                ret[..., i] = self.interpolate(img[..., i], X, o=o)
             return ret.squeeze()
 
-    def apply_transform(self, img, vox, u, vec=False):
+    def apply_transform(self, img, vox, u, vec=False, o=1):
         """Return img warped by transformation u
 
         if vec is True, img is a vector field"""
 
         if not vec:
             img = img[..., np.newaxis]
-        X = u * 1./vox
+        X = u * (1./vox)
         ret = np.empty(u.shape[:-1] + (img.shape[-1],))
         for i in range(img.shape[-1]):
-            ret[..., i] = self.interpolate(img[..., i], X)
+            ret[..., i] = self.interpolate(img[..., i], X, o=o)
         return ret.squeeze()
 
     def interpolate(self, img, X, o=1):

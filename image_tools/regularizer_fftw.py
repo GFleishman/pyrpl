@@ -48,7 +48,7 @@ class gaussian(regularizer):
         """Gaussian regularizer vector field f"""
 
         F = np.empty_like(f)
-        for i in range(f.shape[-1]):
+        for i in range(F.shape[-1]):
             F[..., i] = ndif.gaussian_filter(f[..., i], self.sd)
         return F
 
