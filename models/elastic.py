@@ -1,24 +1,28 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import PyRPL.image_tools.transformer as transformer
-import PyRPL.image_tools.matcher as matcher
-import PyRPL.image_tools.regularizer_fftw as regularizer
+import pyrpl.image_tools.transformer as transformer
+import pyrpl.image_tools.matcher as matcher
+import pyrpl.image_tools.regularizer as regularizer
 
 
-class elastic:
-
-    def __init__(self, J, T, params):
+class model:
+    
+    def __init__(self, input_dictionary):
         """Initialize image level tools"""
 
-        self.dc = data_container(J, T, params)
+        # initialize all the model objects
+        self.smooth_counter = 1
         self._t = transformer.transformer()
-        self._m = matcher.matcher(params['mType'])
-        self._r = regularizer.regularizer(params['rType'],
-                                          params['a'],
-                                          params['b'],
-                                          params['c'],
-                                          params['d'],
+        self.dc = data_container(input_dictionary['image_data'],
+                                 input_dictionary, self._t)
+        self._m = matcher.matcher(input_dictionary['matcher'],
+                                  input_dictionary['window'])
+        self._r = regularizer.regularizer(input_dictionary['regularizer'],
+                                          input_dictionary['abcd'][0],
+                                          input_dictionary['abcd'][1],
+                                          input_dictionary['abcd'][2],
+                                          input_dictionary['abcd'][3],
                                           self.dc.curr_vox,
                                           self.dc.curr_res)
 
@@ -27,16 +31,18 @@ class elastic:
 
         dc = self.dc
         if dc.curr_res != dc.full_res:
-            uhr = self._t.resample(dc.u, dc.curr_vox, dc.full_res, vec=True)
-            dc.I0 = self._t.apply_transform(dc.J1, dc.full_vox, uhr)
+            phi_hr = self._t.resample(dc.phi+dc.u,
+                                      dc.curr_vox, dc.full_res,
+                                      vec=True)
+            dc.I0 = self._t.apply_transform(dc.J1, dc.full_vox, phi_hr)
         else:
-            dc.I0 = self._t.apply_transform(dc.J1, dc.full_vox, dc.u)
-
+            dc.I0 = self._t.apply_transform(dc.J1, dc.full_vox, dc.phi+dc.u)
+            
         # compute regularizer term
-        u_energy = 10  # temporary, should be elastic potential energy of u
+        u_energy = 0.001  # temporary, should be elastic potential energy of u
         # compute matching functional
-        data_match = self._m.dist(dc.J0, dc.I0)
-        return [u_energy, data_match]
+        obj_func = [self._m.dist(dc.J0, dc.I0), self._m.dist(dc.J0, dc.I0)]
+        return [u_energy] + [obj_func]
 
     def get_gradient(self):
         """Obtain the gradient w.r.t. the transformation parameters"""
@@ -52,43 +58,79 @@ class elastic:
     def take_step(self, update):
         """Take an optimization step"""
 
+        # TODO: Make deformation smoothing frequency available to user
         self.dc.u += update
+        if self.smooth_counter % 10 == 0:
+            self.dc.u = self._r.regularize(self.dc.u)
+        self.smooth_counter += 1
 
     def resample(self, res):
         """Resample all objects for multi-resolution schemes"""
 
-        self.dc.resample(res, self._t)
-        self._r = regularizer.regularizer(self.dc.params['rType'],
-                                          self.dc.params['a'],
-                                          self.dc.params['b'],
-                                          self.dc.params['c'],
-                                          self.dc.params['d'],
+        dc = self.dc
+        dc.resample(res, self._t)
+        self._r = regularizer.regularizer(dc.params['regularizer'],
+                                          dc.params['abcd'][0],
+                                          dc.params['abcd'][1],
+                                          dc.params['abcd'][2],
+                                          dc.params['abcd'][3],
                                           self.dc.curr_vox, res)
+    
+    def get_original_image(self, i):
+        """Return the ith original image"""
+        
+        if i == 0:
+            return self.dc.J0
+        elif i == 1:
+            return self.dc.J1
+    
+    def get_warped_image(self, i):
+        """Return the ith warped image"""
+        
+        return self.dc.I0
+    
+    def get_warp(self, i):
+        """Get warp of moving coords onto target coords"""
+        
+        return self.dc.phi + self.dc.u
+    
+    def get_current_voxel(self):
+        """Get current voxel size"""
+        
+        return self.dc.curr_vox
 
 
 class data_container:
     """A container for elastic registration data"""
 
-    def __init__(self, J, T, params):
-        self.J0 = J[0]
-        self.J1 = J[1]
-        self.params = params
+    def __init__(self, J, params, _t):
+        
+        # just to cut down on ugly text
+        s = self
+        
+        s.J0 = J[0]
+        s.J1 = J[1]
+        s.params = params
 
-        self.I0 = np.copy(J[0])
-        self.d = len(J[0].shape)
-        self.full_res = J[0].shape
-        self.curr_res = J[0].shape
-        self.full_vox = params['vox']
-        self.curr_vox = params['vox']
+        s.I0 = np.copy(J[1])
+        s.d = len(J[0].shape)
+        s.full_res = J[0].shape
+        s.curr_res = J[0].shape
+        s.full_vox = params['voxel']
+        s.curr_vox = params['voxel']
 
-        self.u = np.empty(self.full_res + (self.d,))
-        sha = np.diag(self.full_res) - np.identity(self.d) + 1
-        oa = np.ones(self.full_res)
-        for i in range(self.d):
-            self.u[..., i] = np.reshape(np.arange(self.full_res[i]), sha[i])
-            self.u[..., i] *= oa * self.curr_vox[i]
+        s.u = np.zeros(tuple(s.curr_res) + (s.d,))
+        s.phi = np.empty_like(s.u)
+        np.copyto(s.phi, _t.position_array(s.curr_res, s.curr_vox))
+        
 
     def resample(self, res, _t):
-        self.u = _t.resample(self.u, self.curr_vox, res, vec=True)
-        self.curr_res = res
-        self.curr_vox = _t.new_vox_size(self.full_res, res, self.full_vox)
+
+        # just to cut down on ugly text
+        s = self
+
+        s.u = _t.resample(s.u, s.curr_vox, res, vec=True)
+        s.curr_res = res
+        s.curr_vox = _t.new_vox_size(s.full_res, res, s.full_vox)
+        s.phi = np.empty(tuple(s.curr_res) + (s.d,))
+        np.copyto(s.phi, _t.position_array(s.curr_res, s.curr_vox))

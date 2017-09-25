@@ -1,74 +1,62 @@
 # -*- coding: utf-8 -*-
 """
-Author: Greg M. Fleishman
-
-Description: Method for fitting a geodesic through an image time series
-
-Dependencies: NumPy, MatPlotLib, and pyrt.regTools
 """
 
 import numpy as np
-import PyRPL.models.geodesic_regression_in_diffeomorphisms as model
+import numpy.linalg as la
+import matplotlib.pyplot as plt
+from matplotlib import cm
+import pyrpl.image_tools.vcalc as vcalc
+import pyrpl.models.modeler as modeler
 
 
-def optimize(J, T, params):
-    """Find geodesic parameters optimal for image time series J at times T"""
+# TODO: include steps list in output
+# gradient descent with step sizes computed using secant method
+def optimize(input_dictionary):
+    """Optimize objective function with secant method gradient descent"""
 
-    # arrays to store objective function and gradient magnitude
-    # values throughout optimization
-    ttl_its = np.sum(params['its'])
-    P0_mag = np.zeros(ttl_its)
-    data_match = np.zeros((J.shape[0], ttl_its))
-    grad_mag = np.zeros(ttl_its)
+    # initialize
+    steps = []          # store the calculated step sizes
+    regu_match = []     # store regularization term from objective func
+    data_match = []     # store data match term
+    grad_mag = []       # store gradient magnitude
     stop = 1.
-
-    # a list to store step sizes
-    steps = []
-
-    # a geodesic_optimizer object, solves forward and backward systems
-    gr = model.geodesic_regression_in_diffeomorphisms(J, T, params)
+    model = modeler.model(input_dictionary)     # the actual model
 
     k = 0   # count the total iterations
     j = 0   # count the resamples
-    while k < np.sum(params['its']) and stop > 0.0002:
-
-        # make sure CFL condition is satisfied
-        gr.dc.satisfy_cfl()
-
+    # TODO: make "stop" available to user as parameter
+    while k < np.sum(input_dictionary['iterations']) and stop > 0.0002:
         # resample when necessary
-        if k == np.sum(params['its'][0:j]):
-            gr.resample(params['res'][j])
+        if k == np.sum(input_dictionary['iterations'][0:j]):
+            model.resample(input_dictionary['resolutions'][j])
             j += 1
 
         # evaluate objective func, get gradient
-        obj_func = gr.evaluate()
-        g = gr.get_gradient()
+        obj_func = model.evaluate()
+        grad = model.get_gradient()
 
-        # compute and store gradient magnitude
-        sd = np.copy(g)
-        ksd = gr._r.regularize(np.copy(sd)[..., np.newaxis]).squeeze()
-        grad_mag[k] = np.prod(gr.dc.curr_vox) * np.sum(sd * ksd)
-
-        # store objective function values
-        P0_mag[k] = obj_func[0]
-        for i in range(gr.dc.N):
-            data_match[i, k] = obj_func[i+1]
+        # store optimization values
+        regu_match.append(obj_func[0])
+        data_match.append(obj_func[1])
+        grad_mag.append(grad[1])
 
         # take the first secant method step
-        step = params['pStep']
-        gr.take_step(- step * sd)
+        step = input_dictionary['step']
+        model.take_step(- step * grad[0])
         local_steps = [step]
 
         # iterate the secant method line search (max 4 times)
-        old_ip = grad_mag[k] / np.prod(gr.dc.curr_vox)
+        old_ip = grad_mag[k] / np.prod(model.dc.curr_vox)
         for sec_step in range(4):
             # compute the gradient at the new position
-            gr.evaluate()
-            g = gr.get_gradient()
-            new_ip = np.sum(g * ksd)
-            step *= -new_ip / (new_ip - old_ip)
+            model.evaluate()
+            grad_new = model.get_gradient()
+            # compute the new step, and descend
+            new_ip = grad_new[1] / np.prod(model.dc.curr_vox)
+            step *= new_ip / (old_ip - new_ip)
+            model.take_step(-step * grad[0])
             local_steps.append(step)
-            gr.take_step(-step * sd)
             old_ip = new_ip
             if step**2 * grad_mag[k] <= 1e-5:
                 break
@@ -78,4 +66,46 @@ def optimize(J, T, params):
         stop = grad_mag[k]/grad_mag[0]
         k += 1
 
-    return P0_mag, data_match, grad_mag, steps
+        # display feedback for testing
+        if input_dictionary['feedback']:
+            display_feedback(regu_match, data_match, k, model)
+
+
+    output = model.package_output()
+    output['objective'] = [regu_match, data_match, grad_mag]
+    return output
+
+
+# display a real time feedback window
+def display_feedback(regu_match, data_match, k, model):
+    """Display feedback window with objective function values and images"""
+    # 2D feedback windows
+    fig = plt.figure('Optimization', figsize=(16, 10))
+    plt.clf()
+    for i in range(2):
+        # original input images
+        fig.add_subplot(2, 3, i+1)
+        plt.imshow(np.rot90(model.dc.J[i]), cmap=cm.gray)
+        plt.axis('off')
+        # template and match to target
+        fig.add_subplot(2, 3, i+4)
+        plt.imshow(np.rot90(model.dc.Ifr[i]), cmap=cm.gray)
+        plt.axis('off')
+    # objective function values
+    fig.add_subplot(2, 3, 3)
+    colors = ['blue', 'green', 'red']
+    for i in range(2):
+        dm = [x[i] for x in data_match]
+        plt.plot(range(k), dm, color=colors[i])  # TODO: add color
+    fig.add_subplot(2, 3, 3)
+    plt.plot(range(k), regu_match, color=colors[-1])
+    # jacobian determinants
+    fig.add_subplot(2, 3, 6)
+    jd = la.det(vcalc.jacobian(model.get_warp(-1), model.get_current_voxel()))
+    jd = np.log10(jd)
+    plt.imshow(np.rot90(jd))
+    plt.axis('off')
+    plt.colorbar()
+    # show plot
+    plt.pause(0.001)
+    plt.draw()

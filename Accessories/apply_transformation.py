@@ -29,9 +29,6 @@ for i in range(3):
     p = txm_root + str(i) + '.nii.gz'
     txm[..., i] = nib.load(p).get_data().squeeze()
 
-# TEMP: these txms are old, need to have position array added
-#txm += _t.position_array(sh, vox)
-
 # Apply txm to data
 img = _t.apply_transform(img, vox, txm)
 

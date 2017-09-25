@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 Regularization kernel classes including a template class
+This version uses FFTW instead of numpy's own DFT
 
 Author: Greg M. Fleishman
 """
 
 import numpy as np
 import scipy.ndimage.filters as ndif
+
+# import pyfftw if it exists
+try:
+    import pyfftw
+    has_pyfftw = True
+except ImportError:
+    has_pyfftw = False
 
 
 class regularizer:
@@ -23,31 +31,49 @@ class regularizer:
             print "regularizer type must be gaussian or differential"
 
     def regularize(self, f):
+        """Regularize vector field f"""
+
         return self._r.regularize(f)
 
     def convolve(self, f):
+        """Apply operator to vector field f"""
+
         return self._r.convolve(f)
 
 
+# TODO: gaussian should be getting SD from inputs
 class gaussian(regularizer):
     """gaussian regularizer"""
 
     def __init__(self, a, vox):
+        """Store standard deviation for gaussian regularizer"""
+
         # adapt a from physical to voxel units
-        self.sig = a * (1.0/vox)
+        vox = np.array(vox)
+        self.sd = a * (1./vox)
 
     def regularize(self, f):
+        """Gaussian regularizer vector field f"""
         F = np.empty_like(f)
         for i in range(F.shape[-1]):
-            F[..., i] = ndif.gaussian_filter(f[..., i], self.sig)
+            F[..., i] = ndif.gaussian_filter(f[..., i], self.sd)
         return F
 
 
+# TODO: investigate why there is smoothing + large scaling. Shouldn't be
+# any scaling.
 class differential(regularizer):
     """differential operator regularizer"""
 
     def __init__(self, a, b, c, d, vox, sh):
         """Explicit construction of the differential operator's DFT"""
+
+        # if pyfftw module is present, initialize fourier transform objects
+        if has_pyfftw:
+            self.ffter, self.iffter = _initializeFFTW(sh)
+        else:
+            self.ffter = 0
+            self.iffter = 0
 
         # cast and store parameters
         self.a = np.float(a)
@@ -57,7 +83,8 @@ class differential(regularizer):
 
         # define some useful ingredients for later
         dim = len(sh)
-        sha = np.diag(sh) + np.ones((dim, dim)) - np.identity(dim)
+        sha = np.diag(sh) - np.identity(dim) + 1
+        sha = sha.astype(np.int)
         oa = np.ones(sh)
 
         # if grad of div term is 0, kernel is a scalar, else a Lin Txm
@@ -107,29 +134,32 @@ class differential(regularizer):
                 self.L = np.einsum('...ij,...jk->...ik', self.L, cp)
             self.K = _gu_pinv(self.L)
 
+    # apply the inverse kernel to a vector field
     def regularize(self, f):
         """Apply inverse kernel to vector field to regularize"""
 
-        F = _fft(f)
-        if self.b == 0:
+        F = _fft(f, self.ffter)
+        if self.b == 0.0:
             U = self.K*F
         else:
-            F = np.reshape(F, F.shape + (1,))
+            F = F[..., np.newaxis]
             U = np.einsum('...ij,...jk->...ik', self.K, F)
-            U = np.reshape(U, U.shape[:-1])
-        return _ifft(U, f.shape)
+            U = U.squeeze()
+        x = _ifft(U, f.shape, self.iffter)
+        return x
 
+    # apply the kernel to a vector field
     def convolve(self, f):
         """Apply the kernel to vector field"""
 
-        F = _fft(f)
-        if self.b == 0:
+        F = _fft(f, self.ffter)
+        if self.b == 0.0:
             U = self.L*F
         else:
-            F = np.reshape(F, F.shape + (1,))
+            F = F[..., np.newaxis]
             U = np.einsum('...ij,...jk->...ik', self.L, F)
-            U = np.reshape(U, U.shape[:-1])
-        return _ifft(U, f.shape)
+            U = U.squeeze()
+        return _ifft(U, f.shape, self.iffter)
 
 
 def _gu_pinv(a, rcond=1e-15):
@@ -149,21 +179,42 @@ def _gu_pinv(a, rcond=1e-15):
                      np.transpose(u, swap))
 
 
-def _fft(f):
+def _initializeFFTW(sh):
+    """Initialize the forward and inverse transforms"""
+
+    sh = tuple(sh)
+    d = len(sh)
+    ax = range(d)
+    inp = pyfftw.n_byte_align_empty(sh, 16, np.float64)
+    outp = pyfftw.n_byte_align_empty(sh[:-1]+(sh[-1]/2+1,), 16,
+                                     np.complex128)
+    ffter = pyfftw.FFTW(inp, outp, axes=ax)
+    iffter = pyfftw.FFTW(outp, inp, axes=ax, direction='FFTW_BACKWARD')
+    pyfftw.interfaces.cache.enable()
+    return (ffter, iffter)
+
+
+def _fft(f, ffter):
     """Return the DFT of the real valued vector field f"""
 
     sh = f.shape[:-1]
     d = f.shape[-1]
-    F = np.empty(sh[:-1] + (sh[-1]/2+1, d), dtype='cfloat')
-    for i in range(0, d):
-        F[..., i] = np.fft.rfftn(f[..., i])
+    F = np.empty(sh[:-1] + (sh[-1]/2+1, d), dtype=np.complex128)
+    for i in range(d):
+        if ffter:
+            F[..., i] = ffter(f[..., i])
+        else:
+            F[..., i] = np.fft.rfftn(f[..., i])
     return F
 
 
-def _ifft(F, sh):
+def _ifft(F, sh, iffter):
     """Return the iDFT of the vector field F"""
 
     f = np.empty(sh, dtype='float64')
-    for i in range(0, sh[-1]):
-        f[..., i] = np.fft.irfftn(F[..., i], s=sh[:-1])
+    for i in range(sh[-1]):
+        if iffter:
+            f[..., i] = iffter(F[..., i])
+        else:
+            f[..., i] = np.fft.irfftn(F[..., i], s=sh[:-1])
     return f

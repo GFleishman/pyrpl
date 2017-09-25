@@ -27,11 +27,14 @@ class transformer:
 
         sh1 = np.array(sh1).astype(np.float)
         sh2 = np.array(sh2).astype(np.float)
+        vox = np.array(vox).astype(np.float)
         return vox*sh1/sh2
 
     def position_array(self, sh, vox):
         """Return a position array in physical coordinates with shape sh"""
 
+        sh = tuple(sh)
+        vox = np.array(vox).astype(np.float)
         if sh == self.X.shape[:-1]:
             pass
         else:
@@ -48,15 +51,17 @@ class transformer:
     def resample(self, img, vox, res, vec=False, o=1):
         """Resample img to resolution res, compute new voxel size"""
 
+        vox = np.array(vox).astype(np.float)
+        res = list(res)
         if not vec:
             img = img[..., np.newaxis]
 
-        if img.shape[:-1] == res:
+        if img.shape[:-1] == list(res):
             return img.squeeze()
         else:
             nvox = self.new_vox_size(img.shape[:-1], res, vox)
             X = self.position_array(res, nvox)/vox
-            ret = np.empty(res + (img.shape[-1],))
+            ret = np.empty(res + [img.shape[-1]])
             for i in range(img.shape[-1]):
                 ret[..., i] = self.interpolate(img[..., i], X, o=o)
             return ret.squeeze()
@@ -66,6 +71,7 @@ class transformer:
 
         if vec is True, img is a vector field"""
 
+        vox = np.array(vox).astype(np.float)
         if not vec:
             img = img[..., np.newaxis]
         X = u * (1./vox)
